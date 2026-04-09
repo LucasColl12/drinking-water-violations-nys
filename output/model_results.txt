@@ -64,7 +64,7 @@ Dep. Variable:       total_violations   No. Observations:                 7455
 Model:               NegativeBinomial   Df Residuals:                     7450
 Method:                           MLE   Df Model:                            4
 Date:                Wed, 08 Apr 2026   Pseudo R-squ.:                0.003096
-Time:                        21:21:42   Log-Likelihood:                -29784.
+Time:                        21:22:40   Log-Likelihood:                -29784.
 converged:                       True   LL-Null:                       -29876.
 Covariance Type:            nonrobust   LLR p-value:                 6.320e-39
 ==================================================================================
