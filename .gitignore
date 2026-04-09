@@ -1,9 +1,6 @@
 # Raw data (too large for git; scripts re-download it)
 data/raw/
 
-# API key (do not commit)
-apikey.txt
-
 # Python
 __pycache__/
 *.pyc
@@ -20,3 +17,5 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
+
+apikey.txt
