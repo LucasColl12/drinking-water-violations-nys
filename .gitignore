@@ -1,0 +1,22 @@
+# Raw data (too large for git; scripts re-download it)
+data/raw/
+
+# API key (do not commit)
+apikey.txt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/

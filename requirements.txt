@@ -1,0 +1,23 @@
+# Tested with Python 3.13.5
+
+# Data acquisition & wrangling
+requests>=2.31
+pandas>=2.1
+
+# Geospatial analysis
+geopandas>=0.14
+shapely>=2.0
+
+# Visualization
+matplotlib>=3.8
+folium>=0.15
+seaborn>=0.13
+
+# Statistical modeling
+statsmodels>=0.14
+scipy>=1.12
+
+# Census data (optional — script 02 uses the API directly,
+# but this package is useful if you want to explore further)
+# census>=0.8
+# us>=3.0
