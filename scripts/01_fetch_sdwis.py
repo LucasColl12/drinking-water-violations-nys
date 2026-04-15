@@ -10,7 +10,6 @@ Download the data yourself from:
 Place the downloaded ZIP or extracted CSVs in data/raw/. This script
 will find and process them automatically.
 
-Data is saved as CSV files in data/raw/.
 Expected files (the script searches for these patterns):
     - *PUB_WATER_SYSTEM* or *WATER_SYSTEM* → water system inventory
     - *VIOLATION* (not *ENFORCEMENT*)       → violation records
