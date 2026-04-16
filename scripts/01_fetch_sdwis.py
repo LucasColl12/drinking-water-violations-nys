@@ -4,15 +4,12 @@
 Loads manually downloaded SDWA data from EPA's ECHO bulk download and
 filters to New York State.
 
-Download the data yourself from:
-    https://echo.epa.gov/tools/data-downloads#drinking-water
+Download from: https://echo.epa.gov/tools/data-downloads#drinking-water
+Place the downloaded ZIP or extracted folder in data/raw/.
 
-Place the downloaded ZIP or extracted CSVs in data/raw/. This script
-will find and process them automatically.
-
-Expected files (the script searches for these patterns):
-    - *PUB_WATER_SYSTEM* or *WATER_SYSTEM* → water system inventory
-    - *VIOLATION* (not *ENFORCEMENT*)       → violation records
+Expected files:
+    - SDWA_PUB_WATER_SYSTEMS.csv     → water system inventory
+    - SDWA_VIOLATIONS_ENFORCEMENT.csv → violation records (preferred)
 
 Outputs:
     data/raw/water_system_ny.csv
@@ -38,37 +35,69 @@ RAW_DIR = os.path.join(BASE_DIR, "data", "raw")
 # Helpers
 # ---------------------------------------------------------------------------
 
-def find_file(directory: str, patterns: list[str],
-              exclude: list[str] | None = None) -> str | None:
+def find_csv(directory: str, must_contain: str,
+             must_not_contain: list[str] | None = None) -> str | None:
     """
-    Search a directory for a CSV matching any of the given patterns
-    (case-insensitive). Optionally exclude files matching certain terms.
+    Recursively search directory for a CSV whose filename contains
+    must_contain (case-insensitive), excluding files whose name
+    contains any string in must_not_contain.
     """
-    exclude = [e.upper() for e in (exclude or [])]
-    for f in os.listdir(directory):
-        f_upper = f.upper()
-        if not f_upper.endswith(".CSV"):
-            continue
-        if any(ex in f_upper for ex in exclude):
-            continue
-        if any(pat.upper() in f_upper for pat in patterns):
-            return os.path.join(directory, f)
+    must_not_contain = [s.upper() for s in (must_not_contain or [])]
+
+    for root, dirs, files in os.walk(directory):
+        for f in sorted(files):
+            f_upper = f.upper()
+            if not f_upper.endswith(".CSV"):
+                continue
+            if any(ex in f_upper for ex in must_not_contain):
+                continue
+            if must_contain.upper() in f_upper:
+                return os.path.join(root, f)
     return None
 
 
 def extract_zips(directory: str):
-    """Extract any ZIP files in the directory that haven't been extracted yet."""
+    """Extract any non-TIGER ZIP files in the directory."""
     for f in glob.glob(os.path.join(directory, "*.zip")):
-        # Skip TIGER shapefiles
         if "tract" in f.lower() or "tiger" in f.lower():
             continue
         print(f"  Extracting {os.path.basename(f)} ...")
         try:
             with zipfile.ZipFile(f) as zf:
                 zf.extractall(directory)
-                print(f"    → Extracted: {zf.namelist()}")
+                print(f"    → Extracted {len(zf.namelist())} files")
         except Exception as e:
             print(f"    → Failed: {e}")
+
+
+def _load_and_filter_ny(filepath: str, chunk_size: int = 50_000) -> pd.DataFrame:
+    """
+    Read a large national CSV in chunks and keep only NY rows (PWSID
+    starting with 'NY'). Much faster than loading the whole file.
+    """
+    chunks = []
+    total_read = 0
+
+    for chunk in pd.read_csv(filepath, dtype=str, low_memory=False,
+                             chunksize=chunk_size):
+        chunk.columns = [c.lower() for c in chunk.columns]
+        total_read += len(chunk)
+
+        if "pwsid" in chunk.columns:
+            ny_rows = chunk[chunk["pwsid"].str.startswith("NY", na=False)]
+        else:
+            ny_rows = chunk
+
+        if len(ny_rows) > 0:
+            chunks.append(ny_rows)
+
+        print(f"    Read {total_read:,} rows, kept {sum(len(c) for c in chunks):,} NY ...",
+              end="\r", flush=True)
+
+    print()  # newline after progress
+    if chunks:
+        return pd.concat(chunks, ignore_index=True)
+    return pd.DataFrame()
 
 
 # ---------------------------------------------------------------------------
@@ -83,84 +112,67 @@ def main():
     print("=" * 60)
     print(f"  Looking in: {os.path.abspath(RAW_DIR)}\n")
 
-    # Step 1: Extract any ZIP files
+    # Extract any ZIP files first
     extract_zips(RAW_DIR)
 
-    # Step 2: Find the water systems CSV
-    print("\nSearching for water system file ...")
-    pws_path = find_file(RAW_DIR,
-                         ["PUB_WATER_SYSTEM", "WATER_SYSTEM"],
-                         exclude=["VIOLATION", "ENFORCEMENT"])
+    # ------------------------------------------------------------------
+    # Find water systems file
+    # ------------------------------------------------------------------
+    print("Searching for water system file ...")
 
-    if pws_path is None:
-        # Check if our filtered output already exists
-        filtered_pws = os.path.join(RAW_DIR, "water_system_ny.csv")
-        if os.path.exists(filtered_pws):
-            print(f"  Found existing filtered file: {filtered_pws}")
-            pws_path = filtered_pws
-        else:
-            print("  ✗ Could not find a water systems CSV.")
-            print("  Expected a file containing 'PUB_WATER_SYSTEM' or 'WATER_SYSTEM'")
-            print("  in its filename. Download from:")
-            print("  https://echo.epa.gov/tools/data-downloads#drinking-water")
-            return
+    # Prefer SDWA_PUB_WATER_SYSTEMS.csv (full national file from ECHO)
+    pws_path = find_csv(RAW_DIR, "PUB_WATER_SYSTEM",
+                        must_not_contain=["VIOLATION", "ENFORCEMENT",
+                                          "FACILITY", "GEOGRAPHIC"])
+
+    if pws_path:
+        print(f"  ✓ Found: {os.path.relpath(pws_path, RAW_DIR)}")
     else:
-        print(f"  Found: {os.path.basename(pws_path)}")
+        print("  ✗ Could not find SDWA_PUB_WATER_SYSTEMS.csv")
+        print("  Download from: https://echo.epa.gov/tools/data-downloads#drinking-water")
+        return
 
-    # Step 3: Find the violations CSV
-    # Prefer SDWA_VIOLATIONS_ENFORCEMENT.csv — this is the main violations
-    # table with violation_category_code and full date fields.
-    # Exclude PN_VIOLATION (public notification associations) and SITE_VISIT.
+    # ------------------------------------------------------------------
+    # Find violations file
+    # ------------------------------------------------------------------
     print("\nSearching for violations file ...")
-    viol_path = find_file(RAW_DIR,
-                          ["VIOLATIONS_ENFORCEMENT"],
-                          exclude=["SITE_VISIT"])
 
-    # Fallback: any file with VIOLATION in the name
-    if viol_path is None:
-        viol_path = find_file(RAW_DIR,
-                              ["VIOLATION"],
-                              exclude=["PN_VIOLATION", "SITE_VISIT",
-                                       "EVENTS", "MILESTONE"])
+    # STRONGLY prefer SDWA_VIOLATIONS_ENFORCEMENT.csv — this has
+    # violation_category_code, is_health_based_ind, and full date fields.
+    viol_path = find_csv(RAW_DIR, "VIOLATIONS_ENFORCEMENT",
+                         must_not_contain=["PN_VIOLATION"])
 
-    if viol_path is None:
-        filtered_viol = os.path.join(RAW_DIR, "violation_ny.csv")
-        if os.path.exists(filtered_viol):
-            print(f"  Found existing filtered file: {filtered_viol}")
-            viol_path = filtered_viol
-        else:
-            print("  ✗ Could not find a violations CSV.")
-            print("  Expected a file containing 'VIOLATION' in its filename.")
-            return
+    if viol_path:
+        print(f"  ✓ Found: {os.path.relpath(viol_path, RAW_DIR)}")
     else:
-        print(f"  Found: {os.path.basename(viol_path)}")
+        # Fallback: any VIOLATION file that isn't PN or SITE_VISIT
+        viol_path = find_csv(RAW_DIR, "VIOLATION",
+                             must_not_contain=["PN_VIOLATION", "SITE_VISIT",
+                                               "EVENTS", "MILESTONE",
+                                               "violation_ny"])
+        if viol_path:
+            print(f"  Found (fallback): {os.path.relpath(viol_path, RAW_DIR)}")
+        else:
+            print("  ✗ Could not find violations CSV.")
+            return
 
-    # Step 4: Load and filter to NY
-    print(f"\nLoading water systems from {os.path.basename(pws_path)} ...")
-    systems = pd.read_csv(pws_path, dtype=str, low_memory=False)
-    print(f"  Total rows: {len(systems):,}")
-    print(f"  Columns: {list(systems.columns)[:12]}...")
+    # ------------------------------------------------------------------
+    # Load and filter to NY
+    # ------------------------------------------------------------------
+    # These are NATIONAL files (millions of rows). We read in chunks
+    # and filter to NY on the fly to avoid loading everything into memory.
 
-    # Standardize column names to lowercase
-    systems.columns = [c.lower() for c in systems.columns]
-
-    # Filter to NY using PWSID prefix
-    if "pwsid" in systems.columns:
-        systems = systems[systems["pwsid"].str.startswith("NY", na=False)]
+    print(f"\nLoading water systems (chunked, filtering to NY) ...")
+    systems = _load_and_filter_ny(pws_path)
     print(f"  NY systems: {len(systems):,}")
 
-    print(f"\nLoading violations from {os.path.basename(viol_path)} ...")
-    violations = pd.read_csv(viol_path, dtype=str, low_memory=False)
-    print(f"  Total rows: {len(violations):,}")
-    print(f"  Columns: {list(violations.columns)[:12]}...")
-
-    violations.columns = [c.lower() for c in violations.columns]
-
-    if "pwsid" in violations.columns:
-        violations = violations[violations["pwsid"].str.startswith("NY", na=False)]
+    print(f"\nLoading violations (chunked, filtering to NY) ...")
+    violations = _load_and_filter_ny(viol_path)
     print(f"  NY violations: {len(violations):,}")
 
-    # Step 5: Save filtered files
+    # ------------------------------------------------------------------
+    # Save (overwrite any previous filtered files)
+    # ------------------------------------------------------------------
     out_sys = os.path.join(RAW_DIR, "water_system_ny.csv")
     systems.to_csv(out_sys, index=False)
     print(f"\n✓ Saved {len(systems):,} water systems → {out_sys}")
@@ -169,10 +181,14 @@ def main():
     violations.to_csv(out_viol, index=False)
     print(f"✓ Saved {len(violations):,} violations → {out_viol}")
 
-    # Step 6: Diagnostics
+    # ------------------------------------------------------------------
+    # Diagnostics
+    # ------------------------------------------------------------------
     print(f"\n{'='*60}")
     print("DIAGNOSTICS")
     print(f"{'='*60}")
+
+    print(f"\n  Columns: {list(violations.columns)}")
 
     # Date columns
     date_cols = [c for c in violations.columns
@@ -188,12 +204,15 @@ def main():
         except Exception:
             pass
 
-    # Category columns
+    # Category / health columns
     cat_cols = [c for c in violations.columns
-                if "category" in c or "health" in c]
+                if "category" in c or "health" in c or "violation_c" in c]
     print(f"\n  Category/health columns: {cat_cols}")
     for cc in cat_cols:
-        print(f"    {cc}: {violations[cc].value_counts().head(10).to_dict()}")
+        vc = violations[cc].value_counts()
+        print(f"    {cc}:")
+        for val, count in vc.head(10).items():
+            print(f"      {val}: {count:,}")
 
     print(f"\n{'='*60}")
     print("Done! Filtered SDWIS data ready in data/raw/")
