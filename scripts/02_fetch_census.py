@@ -34,6 +34,27 @@ import os
 import sys
 import requests
 import pandas as pd
+from time import sleep
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def fetch_with_retry(url: str, max_retries: int = 3, timeout: int = 300) -> requests.Response:
+    """Fetch a URL with retries and longer timeout for flaky Census API."""
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f"    Attempt {attempt}/{max_retries} (timeout={timeout}s) ...")
+            response = requests.get(url, timeout=timeout)
+            response.raise_for_status()
+            return response
+        except (requests.Timeout, requests.ConnectionError) as e:
+            if attempt < max_retries:
+                wait = 10 * attempt
+                print(f"    Timed out, retrying in {wait}s ...")
+                sleep(wait)
+            else:
+                raise
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -111,7 +132,27 @@ def download_file(url: str, filename: str) -> str:
 
 
 def compute_derived_measures(df: pd.DataFrame) -> pd.DataFrame:
-    """Compute poverty rate and racial composition percentages."""
+    """
+    Compute poverty rate and racial composition percentages.
+    Also cleans Census sentinel values (negative numbers = missing data).
+    The Census API returns codes like -666666666 for suppressed/missing data.
+    ACS top-codes income at $250,001.
+    """
+    # Clean sentinel values: any negative value in numeric columns → NaN
+    numeric_cols = ["total_population", "median_household_income",
+                    "poverty_universe", "population_below_poverty",
+                    "race_total", "white_alone", "black_alone", "hispanic_latino"]
+    for col in numeric_cols:
+        if col in df.columns:
+            df.loc[df[col] < 0, col] = pd.NA
+
+    # Also cap income at reasonable maximum (ACS top-codes at 250001)
+    if "median_household_income" in df.columns:
+        bad_income = df["median_household_income"] < 0
+        n_bad = bad_income.sum()
+        if n_bad > 0:
+            print(f"    Cleaned {n_bad} sentinel income values → NaN")
+
     df["poverty_rate"] = (
         df["population_below_poverty"] / df["poverty_universe"] * 100
     ).round(2)
@@ -141,8 +182,7 @@ def fetch_acs_2022(api_key: str) -> pd.DataFrame:
         f"&key={api_key}"
     )
 
-    response = requests.get(url, timeout=120)
-    response.raise_for_status()
+    response = fetch_with_retry(url)
     data = response.json()
 
     header = data[0]
@@ -197,8 +237,7 @@ def fetch_census_2000(api_key: str) -> pd.DataFrame:
     )
 
     print(f"  Requesting Census 2000 SF3 data ...")
-    response = requests.get(url, timeout=120)
-    response.raise_for_status()
+    response = fetch_with_retry(url)
     data = response.json()
 
     header = data[0]

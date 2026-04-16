@@ -1,79 +1,251 @@
 ======================================================================
-SDWA VIOLATION ANALYSIS — NEW YORK STATE
+HEALTH-BASED SDWA VIOLATION ANALYSIS — NEW YORK STATE
+Comparing 2000–2005 (Historical) vs. 2020–2025 (Recent)
 ======================================================================
 
-1. OVERVIEW
+1. OVERVIEW BY PERIOD
 
-   Total community water systems:  8,107
-   Systems with ≥1 violation:      6,900 (85.1%)
-   Total violations:               223,012
-   Health-based violations:        9,097
-   Monitoring/reporting violations: 213,188
+   --- 2000–2005 ---
+   Total community water systems:  13,697
+   Systems with ≥1 health violation: 1,466 (10.7%)
+   Total health violations:        7,647
+   Mean violations per system:     0.558
+   Median:                         0.0
 
-2. VIOLATIONS BY SYSTEM SIZE
-
-                      n_systems  pct_with_violation  mean_violations  median_violations  total_violations
-system_size_category                                                                                     
-Very Small                 6970               85.05            26.19                8.0            182541
-Small                       810               86.54            34.13                7.0             27648
-Medium                      164               87.20            41.21                8.0              6759
-Large                       140               77.86            41.19                4.0              5767
-Very Large                   16               87.50            16.94                7.0               271
+   --- 2020–2025 ---
+   Total community water systems:  13,697
+   Systems with ≥1 health violation: 423 (3.1%)
+   Total health violations:        2,755
+   Mean violations per system:     0.201
+   Median:                         0.0
 
 
-3. VIOLATIONS BY SOURCE WATER TYPE
+2. HEALTH VIOLATIONS BY SYSTEM SIZE (Period Comparison)
 
-                                                                n_systems  pct_with_violation  mean_violations
-source_water_type                                                                                             
-Ground water                                                         7031               85.34            28.38
-Surface water purchased                                               402               77.11             9.39
-Surface water                                                         297               90.24            28.17
-Groundwater under influence of surface water                          242               93.80            43.17
-Ground water purchased                                                115               73.91             7.20
-Purchased ground water under influence of surface water source          8               62.50             4.12
+   --- 2000–2005 ---
+                      n_systems  pct_with_violation  mean_violations  total_violations
+system_size_category                                                                  
+Very Small                12048                9.79             0.45              5412
+Small                      1000               14.80             1.17              1167
+Medium                      199               25.63             2.13               423
+Large                       147               30.61             2.92               429
+Very Large                   19               31.58             1.47                28
 
-
-4. VIOLATIONS BY OWNERSHIP TYPE
-
-                                 n_systems  pct_with_violation  mean_violations
-owner_type                                                                     
-Private                               6268               85.75            27.57
-Local government                      1494               83.87            29.85
-State or Territorial Government        237               80.59            15.38
-Public/Private                          75               81.33            18.37
-Federal government                      23               86.96            25.70
-Tribal Government                       10                0.00             0.00
+   --- 2020–2025 ---
+                      n_systems  pct_with_violation  mean_violations  total_violations
+system_size_category                                                                  
+Very Small                12048                2.63             0.14              1708
+Small                      1000                5.70             0.52               523
+Medium                      199               10.55             1.29               257
+Large                       147               12.93             1.16               170
+Very Large                   19               31.58             3.63                69
 
 
-5. CORRELATIONS: VIOLATIONS vs. DEMOGRAPHICS
+3. HEALTH VIOLATIONS BY SOURCE WATER TYPE
 
-   Median household income                   r = +0.008  (p = 0.4627) 
-   Poverty rate (%)                          r = +nan  (p = nan) 
-   Percent non-white (%)                     r = +nan  (p = nan) 
+   --- 2000–2005 ---
+                   n_systems  pct_with_violation  mean_violations
+source_water_type                                                
+GW                     11774               10.12             0.42
+SWP                      950                7.16             0.52
+GU                       371               20.49             1.31
+SW                       361               32.96             4.55
+GWP                      202                4.95             0.14
+GUP                       13                7.69             0.77
+
+   --- 2020–2025 ---
+                   n_systems  pct_with_violation  mean_violations
+source_water_type                                                
+GW                     11774                2.47             0.12
+SWP                      950                5.89             0.66
+GU                       371                6.20             0.49
+SW                       361               13.57             1.50
+GWP                      202                1.98             0.05
+GUP                       13                0.00             0.00
 
 
-6. NEGATIVE BINOMIAL REGRESSION
+4. HEALTH VIOLATIONS BY OWNERSHIP TYPE
 
-   DV: total violation count
+   --- 2000–2005 ---
+            n_systems  pct_with_violation  mean_violations
+owner_type                                                
+P               10950               10.31             0.45
+L                2216               12.41             1.04
+S                 332               13.25             0.85
+M                 122               13.11             0.43
+F                  53                3.77             0.55
+N                   4                0.00             0.00
+
+   --- 2020–2025 ---
+            n_systems  pct_with_violation  mean_violations
+owner_type                                                
+P               10950                2.49             0.12
+L                2216                6.09             0.61
+S                 332                2.71             0.13
+M                 122                4.10             0.20
+F                  53                1.89             0.04
+N                   4                0.00             0.00
+
+
+5. SYSTEM-LEVEL CHANGE ANALYSIS (Historical → Recent)
+
+   Systems with ≥1 health violation:
+     Historical (2000–2005): 1,466
+     Recent (2020–2025):     423
+     Change:                 -1,043
+
+   Mean health violations per system:
+     Historical: 0.558
+     Recent:     0.201
+     Change:     -0.357
+
+   Wilcoxon signed-rank test:
+     statistic = 40,165,154.0, p = 0.0000 ***
+
+   Transition matrix (violation status):
+     Clean → Clean:      11,882
+     Clean → Violated:   349  (newly non-compliant)
+     Violated → Clean:   1,392  (improved)
+     Violated → Violated: 74  (persistent)
+
+   McNemar's test (asymmetry in transitions):
+     χ² = 623.64, p = 0.0000 ***
+
+   Change by system size:
+     Very Small    0.449 → 0.142  (-0.307)
+     Small         1.167 → 0.523  (-0.644)
+     Medium        2.126 → 1.291  (-0.834)
+     Large         2.918 → 1.156  (-1.762)
+     Very Large    1.474 → 3.632  (+2.158)
+
+
+6. CORRELATIONS: HEALTH VIOLATIONS vs. DEMOGRAPHICS
+
+   --- 2000–2005 ---
+   Median household income                   r = +0.014  (p = 0.2786) 
+   Poverty rate (%)                          r = -0.029  (p = 0.0294) *
+   Percent non-white (%)                     r = +0.009  (p = 0.4791) 
+
+   --- 2020–2025 ---
+   Median household income                   r = +0.028  (p = 0.0011) **
+   Poverty rate (%)                          r = -0.003  (p = 0.7029) 
+   Percent non-white (%)                     r = +0.023  (p = 0.0069) **
+
+
+7. NEGATIVE BINOMIAL REGRESSION (by period)
+
+   DV: health violation count
    IVs: log(population served), poverty rate, pct nonwhite,
          source water type (ground vs. surface)
 
+   ============================================================
+   2000–2005
+   ============================================================
+   N = 5,582
                      NegativeBinomial Regression Results                      
 ==============================================================================
-Dep. Variable:       total_violations   No. Observations:                 7455
-Model:               NegativeBinomial   Df Residuals:                     7450
+Dep. Variable:      health_violations   No. Observations:                 5582
+Model:               NegativeBinomial   Df Residuals:                     5577
 Method:                           MLE   Df Model:                            4
-Date:                Wed, 08 Apr 2026   Pseudo R-squ.:                0.003096
-Time:                        21:22:40   Log-Likelihood:                -29784.
-converged:                       True   LL-Null:                       -29876.
-Covariance Type:            nonrobust   LLR p-value:                 6.320e-39
+Date:                Thu, 16 Apr 2026   Pseudo R-squ.:                 0.01168
+Time:                        19:12:37   Log-Likelihood:                -3757.9
+converged:                       True   LL-Null:                       -3802.3
+Covariance Type:            nonrobust   LLR p-value:                 2.338e-18
 ==================================================================================
                      coef    std err          z      P>|z|      [0.025      0.975]
 ----------------------------------------------------------------------------------
-Intercept          2.0675      0.116     17.866      0.000       1.841       2.294
-log_pop            0.1188      0.013      9.027      0.000       0.093       0.145
-poverty_rate      -0.0138      0.002     -5.819      0.000      -0.018      -0.009
-pct_nonwhite       0.0066      0.001      4.448      0.000       0.004       0.010
-is_groundwater     0.7814      0.074     10.580      0.000       0.637       0.926
-alpha              2.5643      0.039     65.319      0.000       2.487       2.641
+Intercept         -0.5093      0.361     -1.412      0.158      -1.216       0.198
+log_pop            0.1739      0.045      3.830      0.000       0.085       0.263
+poverty_rate      -0.0119      0.008     -1.554      0.120      -0.027       0.003
+pct_nonwhite      -0.0015      0.006     -0.252      0.801      -0.013       0.010
+is_groundwater    -0.8457      0.214     -3.951      0.000      -1.265      -0.426
+alpha             19.6398      0.993     19.774      0.000      17.693      21.586
 ==================================================================================
+
+   ============================================================
+   2020–2025
+   ============================================================
+   N = 13,397
+                     NegativeBinomial Regression Results                      
+==============================================================================
+Dep. Variable:      health_violations   No. Observations:                13397
+Model:               NegativeBinomial   Df Residuals:                    13392
+Method:                           MLE   Df Model:                            4
+Date:                Thu, 16 Apr 2026   Pseudo R-squ.:                 0.01681
+Time:                        19:12:37   Log-Likelihood:                -3028.6
+converged:                      False   LL-Null:                       -3080.4
+Covariance Type:            nonrobust   LLR p-value:                 1.738e-21
+==================================================================================
+                     coef    std err          z      P>|z|      [0.025      0.975]
+----------------------------------------------------------------------------------
+Intercept         -2.0963      0.498     -4.208      0.000      -3.073      -1.120
+log_pop            0.2742      0.064      4.266      0.000       0.148       0.400
+poverty_rate      -0.0055      0.013     -0.439      0.661      -0.030       0.019
+pct_nonwhite       0.0076      0.008      1.018      0.309      -0.007       0.022
+is_groundwater    -1.2240      0.298     -4.108      0.000      -1.808      -0.640
+alpha             78.4600      4.846     16.190      0.000      68.962      87.958
+==================================================================================
+
+
+8. POOLED MODEL WITH PERIOD INTERACTION
+
+   Tests whether the relationship between demographics
+   and violations has changed over time.
+
+   N = 18,979
+                     NegativeBinomial Regression Results                      
+==============================================================================
+Dep. Variable:      health_violations   No. Observations:                18979
+Model:               NegativeBinomial   Df Residuals:                    18971
+Method:                           MLE   Df Model:                            7
+Date:                Thu, 16 Apr 2026   Pseudo R-squ.:                  -1.811
+Time:                        19:12:37   Log-Likelihood:                -20036.
+converged:                       True   LL-Null:                       -7127.1
+Covariance Type:            nonrobust   LLR p-value:                     1.000
+==========================================================================================
+                             coef    std err          z      P>|z|      [0.025      0.975]
+------------------------------------------------------------------------------------------
+Intercept                 -0.4845        nan        nan        nan         nan         nan
+log_pop                    0.2118        nan        nan        nan         nan         nan
+poverty_rate              -0.0173        nan        nan        nan         nan         nan
+pct_nonwhite              -0.0019        nan        nan        nan         nan         nan
+is_groundwater            -1.1044        nan        nan        nan         nan         nan
+is_recent                 -1.3586        nan        nan        nan         nan         nan
+is_recent:poverty_rate     0.0116        nan        nan        nan         nan         nan
+is_recent:pct_nonwhite     0.0120        nan        nan        nan         nan         nan
+alpha                   1.177e-11        nan        nan        nan         nan         nan
+==========================================================================================
+
+   Key interaction terms:
+   - is_recent:poverty_rate  → Has the poverty–violation
+     relationship changed between periods?
+   - is_recent:pct_nonwhite  → Has the race–violation
+     relationship changed between periods?
+
+
+9. EQUITY GAP ANALYSIS
+
+   Comparing violation rates in high-poverty vs. low-poverty tracts,
+   and majority-nonwhite vs. majority-white tracts, across periods.
+
+   --- 2000–2005 ---
+   Poverty threshold (median): 9.3%
+     High-poverty tracts: mean = 0.582 (n=2,861)
+     Low-poverty tracts:  mean = 0.733 (n=2,858)
+     Mann-Whitney U: p = 0.3749 
+
+   Majority non-white (≥50%) vs. majority white:
+     Majority non-white: mean = 0.370 (n=138)
+     Majority white:     mean = 0.665 (n=5,581)
+     Mann-Whitney U: p = 0.2770 
+
+   --- 2020–2025 ---
+   Poverty threshold (median): 9.8%
+     High-poverty tracts: mean = 0.160 (n=6,859)
+     Low-poverty tracts:  mean = 0.243 (n=6,821)
+     Mann-Whitney U: p = 0.0000 ***
+
+   Majority non-white (≥50%) vs. majority white:
+     Majority non-white: mean = 0.306 (n=173)
+     Majority white:     mean = 0.200 (n=13,507)
+     Mann-Whitney U: p = 0.0002 ***

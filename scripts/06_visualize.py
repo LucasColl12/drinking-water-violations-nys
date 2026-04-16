@@ -520,7 +520,25 @@ def main():
     wide = pd.read_csv(os.path.join(OUTPUT_DIR, "analytical_dataset_wide.csv"))
 
     print(f"Loaded long dataset:  {len(long):,} rows")
-    print(f"Loaded wide dataset:  {len(wide):,} rows\n")
+    print(f"Loaded wide dataset:  {len(wide):,} rows")
+
+    # Standardize column names (handle ECHO Exporter vs. SDWIS naming)
+    for df in [long, wide]:
+        renames = {}
+        for canonical, variants in {
+            "county_served": ["fac_county"],
+            "pws_name": ["fac_name"],
+            "city_served": ["fac_city"],
+        }.items():
+            if canonical not in df.columns:
+                for v in variants:
+                    if v in df.columns:
+                        renames[v] = canonical
+                        break
+        if renames:
+            df.rename(columns=renames, inplace=True)
+
+    print(f"  Columns: {list(long.columns)[:12]}...\n")
 
     fig1_county_comparison(long)
     fig2_size_comparison(long)
